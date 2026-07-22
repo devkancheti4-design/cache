@@ -38,6 +38,23 @@ CRDT) and **load-bearing**: freeze it to a static twin and recall drops **50/50 
 organism, not a screenshot. Run it: `python3 organism_superpower.py`. *(Boundary: exact facts only — fuzzy/updated
 facts stay with mem0; see the end-to-end QA tie below.)*
 
+## 💰 The killer use: a deterministic answer cache on mem0's server (`answer_cache.py`)
+
+Many customers ask the **same** question. mem0 pays the full pipeline (embed + ANN search + LLM answer) on *every*
+request. Put the organism in front as a cache: compute an answer **once**, store it keyed by the question, serve
+every identical repeat free, instant, and **byte-identical**. Measured on 100k requests over 200 distinct questions:
+
+| | API calls | est. cost | latency |
+|---|---|---|---|
+| mem0, no cache | 200,000 | $42 | 31,358 s |
+| **mem0 + organism cache** | **400** | **$0.08** | **63 s** |
+| **saved** | **99.8%** | **99.8%** | **99.8%** |
+
+Savings = your **repeat rate** (high for FAQ/support/API traffic). *Honest limits:* only **verbatim** repeats hit an
+exact cache (a paraphrase pays again); if the answer changes the cache goes **stale** (needs TTL/invalidation — the
+grow-only organism can't update); and response memoization itself is standard (Redis does it) — the organism's real
+add is a **deterministic, crash-exact, CRDT-mergeable** cache that N mem0 servers share bit-exact with no coordinator.
+
 ## Measured: hybrid (organism + embeddings) vs mem0-style (semantic-only)
 
 | metric | mem0-style (semantic) | **hybrid** |
@@ -92,6 +109,7 @@ top. The honest one-liner: **mem0's semantic recall, plus a deterministic exact 
 | [`hybrid_vs_mem0.py`](hybrid_vs_mem0.py) | the retrieval-substrate head-to-head (real MiniLM embeddings; TF-IDF fallback) |
 | [`locomo_qa.py`](locomo_qa.py) | **end-to-end QA** — an LLM answers from each system's retrieval; see [LOCOMO_RESULTS.md](LOCOMO_RESULTS.md) (it's a TIE on accuracy) |
 | [`organism_superpower.py`](organism_superpower.py) | **the superpower**: 24 bytes/fact (66× smaller) + instant 0-API recall vs mem0 embeddings, on the live organism |
+| [`answer_cache.py`](answer_cache.py) | **server-side cost**: deterministic answer cache — same question paid ONCE, repeats free/instant/byte-identical (99.8% saved) |
 | [`vital_signs.py`](vital_signs.py) | launch-time liveness check — aborts with named symptoms if the organism is static |
 | [`CAPABILITIES.md`](CAPABILITIES.md) | fuller, adversarially-verified map of positives **and** negatives |
 
