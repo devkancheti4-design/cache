@@ -1,8 +1,10 @@
-# cache — a deterministic exact-key memory spine for AI agents (a hybrid that beats mem0 where it matters)
+# cache — a deterministic exact-key memory spine for AI agents (a mem0 hybrid: wins on cost/determinism/audit, ties on accuracy)
 
 **Thesis:** an AI-agent memory should not be *only* a vector store. Put a **deterministic, exact-key spine** (an
-alive "Collatz organism") *under* the embedding layer and you keep semantic recall **and** gain exact factual
-recall, determinism, bit-exact multi-device merge, crash-exact recovery, and near-zero-cost repeated recall.
+alive "Collatz organism") *under* the embedding layer and you keep semantic recall while gaining **near-zero-cost
+repeated recall, determinism, bit-exact multi-device merge, crash-exact recovery, offline recall, and auditability**.
+**Honest up front:** on end-to-end *answer accuracy* with an LLM in the loop it **ties** mem0 (see below) — the win
+is cost/determinism/offline/audit, not answer quality.
 
 Everything here is a **runnable, self-asserting** Python file — clone and run; nothing is a screenshot or a promise.
 Measured with **real MiniLM embeddings** (the same kind mem0 uses), on a LoCoMo-shaped memory workload.
@@ -49,8 +51,8 @@ that is ~**$200 → $0** (illustrative LLM pricing); the spine needs no cache la
 - **Determinism** — same data → byte-identical store (`fingerprint()`); mem0's LLM extraction is non-deterministic.
 - **Bit-exact multi-device merge** — CRDT grow-only union, `A∪B == B∪A`, no coordinator.
 - **Crash-exact recovery** — WAL replay revives the store byte-for-byte after a real `SIGKILL`.
-- **Cost / latency at scale** — 0-API µs recall; repeated calls are free.
 - **On-device / offline / private** — exact recall needs no network and no LLM.
+- **Audit & erasure** — reproducible provenance + machine-checkable erasure certificate (see `CAPABILITIES.md`).
 
 ## ❌ Where it LOSES to mem0 (stated plainly — do not skip this)
 - **Fuzzy / paraphrase recall** where the query shares no exact key: that's the **embedding layer's** job, and the
