@@ -22,6 +22,22 @@ python3 vital_signs.py                     # proves the organism is genuinely AL
 > weakness is hidden. Install `sentence-transformers` to see the gap. The structural results (determinism, merge,
 > crash-exact, cost) don't depend on the embedder.
 
+## 🦾 The point: bolt the organism ONTO mem0 (a superpower, not a competitor)
+
+Storing an exact fact ("premium in 2020 = $1240") as a mem0 embedding wastes a 1.5 KB vector and a model
+forward-pass per recall. Bolt a **live Collatz organism** alongside mem0 to absorb the exact-fact slice:
+
+| per exact fact | mem0 embedding | **organism** |
+|---|---|---|
+| storage | 1573 bytes (384-dim f32 + text) | **24 bytes** — 66× smaller |
+| recall | ~10.7 ms (embed query + ANN search) + an LLM call | **~0.0001 ms, 0 API, 0 network** |
+
+So mem0 keeps the fuzzy/semantic memories; the organism takes the exact facts → **smaller vector index + instant,
+free, deterministic exact recall.** Proven on the **real alive organism** (deterministic / regenerating / adaptive /
+CRDT) and **load-bearing**: freeze it to a static twin and recall drops **50/50 → 0/50** — the facts live in the
+organism, not a screenshot. Run it: `python3 organism_superpower.py`. *(Boundary: exact facts only — fuzzy/updated
+facts stay with mem0; see the end-to-end QA tie below.)*
+
 ## Measured: hybrid (organism + embeddings) vs mem0-style (semantic-only)
 
 | metric | mem0-style (semantic) | **hybrid** |
@@ -75,6 +91,7 @@ top. The honest one-liner: **mem0's semantic recall, plus a deterministic exact 
 | [`complete_alive_organism.py`](complete_alive_organism.py) | the exact-key spine: confirm-to-adopt, Collatz heartbeat, WAL crash-exact `revive()`, CRDT `merge()`, deterministic `fingerprint()` |
 | [`hybrid_vs_mem0.py`](hybrid_vs_mem0.py) | the retrieval-substrate head-to-head (real MiniLM embeddings; TF-IDF fallback) |
 | [`locomo_qa.py`](locomo_qa.py) | **end-to-end QA** — an LLM answers from each system's retrieval; see [LOCOMO_RESULTS.md](LOCOMO_RESULTS.md) (it's a TIE on accuracy) |
+| [`organism_superpower.py`](organism_superpower.py) | **the superpower**: 24 bytes/fact (66× smaller) + instant 0-API recall vs mem0 embeddings, on the live organism |
 | [`vital_signs.py`](vital_signs.py) | launch-time liveness check — aborts with named symptoms if the organism is static |
 | [`CAPABILITIES.md`](CAPABILITIES.md) | fuller, adversarially-verified map of positives **and** negatives |
 
