@@ -1,0 +1,6 @@
+numpy
+scikit-learn
+# STRONGLY RECOMMENDED — reproduces the headline result (mem0 uses neural embeddings):
+sentence-transformers
+# Without sentence-transformers the harness falls back to TF-IDF, whose char n-grams accidentally match exact
+# substrings, so BOTH systems score ~100% on exact facts and mem0's real weakness is hidden. Install this to see it.
