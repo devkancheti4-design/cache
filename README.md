@@ -32,16 +32,20 @@ python3 vital_signs.py                     # proves the organism is genuinely AL
 | **repeated recall, server-side** | **27.7 ms + embed +LLM every call** | **0.0024 ms, 0 API — free** |
 | determinism / CRDT merge / crash-exact | ✗ | **✓ ✓ ✓** |
 
-**What this shows.** Vector similarity can't cleanly separate near-duplicate records ("In 2013 the premium was X"
-vs "In 2014…") — even reading the top **10** retrieved memories it misses facts. An exact key gets them **every
-time**, and it costs **nothing** on paraphrase queries (a tie — the hybrid routes those to the same embedder).
+**What this shows — and the honest limit.** The table above is **retrieval** quality: vector similarity can't cleanly
+rank near-duplicate records ("In 2013 the premium was X" vs "In 2014…") at top-1. **But** in a real **end-to-end QA**
+run (`locomo_qa.py`, LLM answerer reading each system's top-5), the answer accuracy is a **TIE — 14/14 both** — because
+a capable LLM reading top-5 recovers the record when the question carries a distinctive token. **So the hybrid does NOT
+beat mem0 on answer accuracy** (only ~3% of dense facts fall outside top-5). Its real, decisive wins are **cost,
+determinism, offline, and audit** — not accuracy. See **[LOCOMO_RESULTS.md](LOCOMO_RESULTS.md)** for the full fair run.
 
 **Server-side, repeated exact calls are almost free.** mem0 pays an embedding (+ usually an LLM answer) on *every*
 recall; the exact spine stores once and every repeat is a µs lookup with **0 API calls**. At 1M repeated recalls
 that is ~**$200 → $0** (illustrative LLM pricing); the spine needs no cache layer — it *is* the answer.
 
-## ✅ Where the hybrid wins (real, defensible)
-- **Exact factual recall** over dense/similar records (IDs, dates, amounts, codes) — 100% vs 38%@1 / 98%@10.
+## ✅ Where the hybrid wins (real, defensible — note: NOT answer accuracy)
+- **Cost / latency** — 0-API µs recall; repeated calls are free (mem0 pays embed+LLM every call). *This is the big one.*
+- **Retrieval@top-1 / no-LLM tiers** — exact key 100%@1 vs semantic 38–82%@1; matters when you don't put an LLM on top.
 - **Determinism** — same data → byte-identical store (`fingerprint()`); mem0's LLM extraction is non-deterministic.
 - **Bit-exact multi-device merge** — CRDT grow-only union, `A∪B == B∪A`, no coordinator.
 - **Crash-exact recovery** — WAL replay revives the store byte-for-byte after a real `SIGKILL`.
@@ -67,6 +71,7 @@ top. The honest one-liner: **mem0's semantic recall, plus a deterministic exact 
 | file | role |
 |---|---|
 | [`complete_alive_organism.py`](complete_alive_organism.py) | the exact-key spine: confirm-to-adopt, Collatz heartbeat, WAL crash-exact `revive()`, CRDT `merge()`, deterministic `fingerprint()` |
-| [`hybrid_vs_mem0.py`](hybrid_vs_mem0.py) | the head-to-head harness (real MiniLM embeddings; TF-IDF fallback) |
+| [`hybrid_vs_mem0.py`](hybrid_vs_mem0.py) | the retrieval-substrate head-to-head (real MiniLM embeddings; TF-IDF fallback) |
+| [`locomo_qa.py`](locomo_qa.py) | **end-to-end QA** — an LLM answers from each system's retrieval; see [LOCOMO_RESULTS.md](LOCOMO_RESULTS.md) (it's a TIE on accuracy) |
 | [`vital_signs.py`](vital_signs.py) | launch-time liveness check — aborts with named symptoms if the organism is static |
 | [`CAPABILITIES.md`](CAPABILITIES.md) | fuller, adversarially-verified map of positives **and** negatives |
