@@ -75,3 +75,7 @@ top. The honest one-liner: **mem0's semantic recall, plus a deterministic exact 
 | [`locomo_qa.py`](locomo_qa.py) | **end-to-end QA** — an LLM answers from each system's retrieval; see [LOCOMO_RESULTS.md](LOCOMO_RESULTS.md) (it's a TIE on accuracy) |
 | [`vital_signs.py`](vital_signs.py) | launch-time liveness check — aborts with named symptoms if the organism is static |
 | [`CAPABILITIES.md`](CAPABILITIES.md) | fuller, adversarially-verified map of positives **and** negatives |
+
+## License
+
+Apache License 2.0 (same as mem0) — see [LICENSE](LICENSE) and [NOTICE](NOTICE). Free for anyone, including companies, to use, embed, and build on.
