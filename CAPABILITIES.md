@@ -11,8 +11,12 @@ re-derives the byte-identical `fingerprint()`, points any recalled fact to the e
 it ("why recalled = exact-key match at line N", not a cosine rank), and detects out-of-band edits as fingerprint
 divergence (caught 2/2). mem0 puts a **non-deterministic LLM in the write path**, so replaying the same inputs yields
 a different memory set — no canonical state to hash, no per-input provenance.
-*Caveat:* holds only in **observe-only, heartbeat-OFF, config-pinned** mode; heartbeat self-clean mutations are not
-journaled, so if the Collatz heartbeat runs, the replay guarantee breaks.
+*Caveat (three real limits):* (a) holds only in **observe-only, heartbeat-OFF, config-pinned** mode — heartbeat
+self-clean mutations aren't journaled, so if the Collatz heartbeat runs the replay diverges and *falsely* reports
+TAMPERED (measured: store emptied after 113 ticks while `revive(WAL)` still held 50 keys). You get auditable **or**
+self-cleaning, not both, unless heartbeats are also logged. (b) It's **tamper-evident, not tamper-proof**: an
+adversary who *also* controls the WAL can append a forged key that replays into the store — closing that needs a
+signed hash-chain. (c) It covers only the **exact-key spine**, not the embedding layer.
 
 **2. Point-in-time snapshot / rollback.** The write path is a pure deterministic function of the key sequence, so
 the exact global state as of any past observe-index N is reconstructable and sha256-verifiable from the raw WAL.
@@ -30,8 +34,14 @@ always returns it".
 **4. Machine-checkable erasure certificate (GDPR).** For a fact stored as an exact key, deletion yields a
 deterministic proof: membership `→ False` plus a fingerprint an auditor independently recomputes as
 `fp(corpus − fact)`. mem0's non-deterministic extraction scatters one disclosure across paraphrased vectors and can
-only offer a similarity score — it can never *prove absence*. *Caveat:* the proof covers the **adopted** set; with
-`confirm > 1` a secret still in the pending counter isn't covered, and anything already embedded elsewhere isn't.
+only offer a similarity score — it can never *prove absence*. *Caveat (this is narrower than it sounds):* (a) the
+emitted fingerprint is a **64-bit truncation**, not collision-strong for an adversarial "prove you erased it"; (b)
+deletion **doesn't stick** on its own — the plaintext key stays in the append-only WAL and `revive()` / grow-only
+`merge()` resurrect it (needs a tombstone / 2P-set to close, measured); (c) with `confirm > 1` a secret still in the
+pending buffer is invisible to the fingerprint; (d) "mem0 has no membership test" is **overstated** — its records are
+plaintext, so `grep` is a partial (if unsound) test. The durable edge is narrowly the **reproducible rebuild-hash
+certificate** (an application of determinism), which becomes a true multi-device erasure proof only with a
+tombstone + hashed pending-buffer + full 256-bit digest.
 
 **5. Zero-dependency, no-network exact recall.** The pure-stdlib exact spine recalls 100% with **0 model inferences
 and 0 bytes leaving the device**; mem0's default retrieval is irreducibly neural (must embed the query), so under a
