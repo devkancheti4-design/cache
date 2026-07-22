@@ -103,8 +103,11 @@ def main():
     org = AliveOrganism(confirm=1)
     for sl, yr, val, _ in facts: org.observe(f"{sl}\x1f{yr}\x1f{val}")
     def lookup(sl, yr):
+        # NOTE: iterate SORTED, not raw set order — a raw `set` iteration is non-deterministic across processes,
+        # which matters when two values collide on the same (slot,year) key (see CAPABILITIES.md "no supersession").
+        # This makes recall deterministic; it still cannot pick the *latest* value (grow-only store has no clock).
         pref = f"{sl}\x1f{yr}\x1f"
-        for k in org.normal:
+        for k in sorted(org.normal):
             if k.startswith(pref): return k.split("\x1f")[2]
         return None
     t0 = time.time()
